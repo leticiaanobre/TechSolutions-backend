@@ -69,8 +69,32 @@ export const getHourBank = async (req, res) => {
       return res.status(404).json({ message: 'Hour bank not found' });
     }
 
-    res.json(user.hourBank);
+    // Busca todas as tarefas concluídas do cliente
+    const completedTasks = await Task.find({
+      clientId: req.userId,
+      status: 'completed'
+    });
+
+    // Calcula o total de horas utilizadas
+    const hoursUsed = completedTasks.reduce((total, task) => total + (task.actualHours || 0), 0);
+
+    // Prepara a resposta
+    const response = {
+      plano: user.hourBank.plan,
+      horasContratadas: user.hourBank.total,
+      horasUtilizadas: hoursUsed,
+      horasDisponiveis: user.hourBank.total - hoursUsed,
+      tarefasConcluidas: completedTasks.length,
+      detalhamentoHoras: completedTasks.map(task => ({
+        tarefa: task.name,
+        horasGastas: task.actualHours || 0,
+        dataFinalizacao: task.completedAt
+      }))
+    };
+
+    res.json(response);
   } catch (error) {
+    console.error(error);
     res.status(500).json({ message: 'Error fetching hour bank' });
   }
 };
