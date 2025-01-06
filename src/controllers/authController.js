@@ -5,36 +5,55 @@ import { translateToEnglish } from '../constants/translations.js';
 export const register = async (req, res) => {
   try {
     const { 
-      nome, 
-      email, 
-      senha, 
-      role: cargo,
-      hourBank: bancoHoras,
-      skills: habilidades 
+      // Campos em inglês (prioritários)
+      name,
+      email,
+      password,
+      role,
+      hourBank,
+      skills,
+      // Campos alternativos em português
+      nome,
+      senha,
+      cargo,
+      bancoHoras,
+      habilidades
     } = req.body;
 
+    // Verifica usuário existente
     const existingUser = await User.findOne({ email });
     if (existingUser) {
       return res.status(400).json({ message: 'User already exists' });
     }
 
-    const role = translateToEnglish('roles', cargo);
-    
-    // Traduz o plano do banco de horas se existir
-    const hourBank = bancoHoras ? {
-      ...bancoHoras,
-      plan: translateToEnglish('plans', bancoHoras.plan)
-    } : undefined;
+    // Processa banco de horas
+    let processedHourBank;
+    if (hourBank) {
+      processedHourBank = {
+        ...hourBank,
+        plan: hourBank.plan // Assume que já está em inglês
+      };
+    } else if (bancoHoras) {
+      processedHourBank = {
+        total: bancoHoras.total,
+        used: bancoHoras.used || 0,
+        plan: translateToEnglish('plans', bancoHoras.plan)
+      };
+    }
 
-    const newUser = new User({ 
-      name: nome, 
-      email, 
-      password: senha,
-      role,
-      hourBank,
-      skills: habilidades
+    // Processa role/cargo
+    const processedRole = role || (cargo ? translateToEnglish('roles', cargo) : 'client');
+
+    // Cria o usuário
+    const newUser = new User({
+      name: name || nome,
+      email,
+      password: password || senha,
+      role: processedRole,
+      hourBank: processedHourBank,
+      skills: skills || habilidades
     });
-    
+
     await newUser.save();
 
     const token = jwt.sign({ userId: newUser._id }, process.env.JWT_SECRET);
@@ -58,14 +77,18 @@ export const register = async (req, res) => {
 
 export const login = async (req, res) => {
   try {
-    const { email, senha } = req.body;
+    const { 
+      email,
+      password,
+      senha 
+    } = req.body;
 
     const user = await User.findOne({ email });
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
 
-    const isMatch = await user.comparePassword(senha);
+    const isMatch = await user.comparePassword(password || senha);
     if (!isMatch) {
       return res.status(401).json({ message: 'Invalid credentials' });
     }
