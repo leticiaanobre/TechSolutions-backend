@@ -14,8 +14,38 @@ export const createTask = async (req, res) => {
 
 export const getTasks = async (req, res) => {
   try {
-    const tasks = await Task.find();
+    const tasks = await Task.find()
+      .populate('userId', 'name email')
+      .populate('assignedTo', 'name email');
     res.json(tasks);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+export const getTaskHistory = async (req, res) => {
+  try {
+    const { status } = req.query;
+    let query = { userId: req.user._id };
+    
+    // Se um status específico foi solicitado
+    if (status) {
+      query.status = status;
+    }
+
+    const tasks = await Task.find(query)
+      .populate('assignedTo', 'name email')
+      .sort({ createdAt: -1 }); // Ordena do mais recente para o mais antigo
+
+    // Agrupa as tarefas por status
+    const groupedTasks = {
+      completed: tasks.filter(task => task.status === 'completed'),
+      in_progress: tasks.filter(task => task.status === 'in_progress'),
+      pending: tasks.filter(task => task.status === 'pending'),
+      rejected: tasks.filter(task => task.status === 'rejected')
+    };
+
+    res.json(groupedTasks);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -31,8 +61,7 @@ export const getHourBank = async (req, res) => {
     const tasks = await Task.find({ userId });
     let totalHours = 0;
     tasks.forEach(task => {
-      // Assuming you have a way to calculate hours spent on a task
-      const hoursSpent = calculateHoursSpent(task); // Replace with your actual logic
+      const hoursSpent = calculateHoursSpent(task);
       totalHours += hoursSpent;
     });
     res.json({ userId, totalHours });
@@ -42,7 +71,5 @@ export const getHourBank = async (req, res) => {
 };
 
 const calculateHoursSpent = (task) => {
-  // Replace with your actual logic to calculate hours spent on a task
-  // This is a placeholder
-  return Math.random() * 8; // Returns a random number of hours between 0 and 8
+  return Math.random() * 8; // Placeholder
 };
