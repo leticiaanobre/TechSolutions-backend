@@ -9,7 +9,7 @@ export default (req, res, next) => {
 
   const parts = authHeader.split(' ');
 
-  if (!parts.length === 2) {
+  if (parts.length !== 2) {
     return res.status(401).json({ message: 'Token inválido' });
   }
 
@@ -24,7 +24,7 @@ export default (req, res, next) => {
       return res.status(401).json({ message: 'Token inválido' });
     }
 
-    req.userId = decoded.id;
+    req.userId = decoded.userId;
     return next();
   });
 };
