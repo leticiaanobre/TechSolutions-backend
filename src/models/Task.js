@@ -14,7 +14,12 @@ const taskSchema = new mongoose.Schema({
     enum: ['pending', 'in_progress', 'completed', 'rejected'],
     default: 'pending'
   },
-  userId: {
+  priority: {
+    type: String,
+    enum: ['low', 'medium', 'high', 'urgent'],
+    default: 'medium'
+  },
+  clientId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
     required: true
@@ -23,12 +28,30 @@ const taskSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User'
   },
+  estimatedHours: {
+    type: Number,
+    required: true
+  },
+  actualHours: {
+    type: Number,
+    default: 0
+  },
   dueDate: {
     type: Date,
     required: true
   },
+  startDate: {
+    type: Date
+  },
   completedAt: {
     type: Date
+  },
+  adminNotes: {
+    type: String
+  },
+  evaluation: {
+    rating: { type: Number, min: 1, max: 5 },
+    comment: String
   }
 }, {
   timestamps: true // Adiciona createdAt e updatedAt automaticamente
