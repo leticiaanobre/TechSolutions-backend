@@ -2,6 +2,17 @@ import Task from '../models/Task.js';
 import User from '../models/User.js';
 import { translateToEnglish } from '../constants/translations.js';
 
+export const getUsers = async (req, res) => {
+  try {
+    const users = await User.find({ role: 'developer' }).select('-password');
+    res.json(users);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server Error' });
+  }
+};
+
+
 export const createTask = async (req, res) => {
   try {
     const { 
@@ -9,8 +20,16 @@ export const createTask = async (req, res) => {
       descricao, 
       prioridade,
       horasEstimadas,
-      dataVencimento 
+      dataVencimento,
+      atribuirDesenvolvedor 
     } = req.body;
+
+    if (atribuirDesenvolvedor) {
+      const user = await User.findById(atribuirDesenvolvedor);
+      if (!user) {
+        return res.status(400).json({ message: 'Usuário atribuído não encontrado' });
+      }
+    }
 
     // Traduz a prioridade se fornecida
     const priority = prioridade ? translateToEnglish('priority', prioridade) : 'medium';
@@ -22,7 +41,8 @@ export const createTask = async (req, res) => {
       estimatedHours: horasEstimadas,
       dueDate: dataVencimento,
       clientId: req.userId,
-      status: 'pending'
+      status: 'pending',
+      assignedTo: atribuirDesenvolvedor
     });
 
     const savedTask = await newTask.save();
