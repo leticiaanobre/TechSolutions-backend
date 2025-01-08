@@ -8,7 +8,8 @@ export const createTask = async (req, res) => {
       descricao,
       prioridade,
       horasEstimadas,
-      dataVencimento
+      dataVencimento,
+      atribuirDesenvolvedor
     } = req.body;
 
     const priority = translateToEnglish('priority', prioridade);
@@ -19,7 +20,8 @@ export const createTask = async (req, res) => {
       priority,
       estimatedHours: horasEstimadas,
       dueDate: dataVencimento,
-      clientId: req.user.id // Assumindo que temos o usuário no request após autenticação
+      clientId: req.user.id,
+      assignedTo: atribuirDesenvolvedor
     });
 
     await task.save();
@@ -33,7 +35,8 @@ export const createTask = async (req, res) => {
       status: translateToPortuguese('status', task.status),
       horasEstimadas: task.estimatedHours,
       dataVencimento: task.dueDate,
-      dataCriacao: task.createdAt
+      dataCriacao: task.createdAt,
+      desenvolvedorAtribuido: task.assignedTo
     };
 
     res.status(201).json(response);
